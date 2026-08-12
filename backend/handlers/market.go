@@ -21,10 +21,11 @@ func NewMarketplaceHandler(crop *services.CropService, order *services.OrderServ
 }
 
 type MarketplacePageData struct {
-	Crops   []models.Crop
-	IsBuyer bool
-	Message string
-	Error   string
+	Crops         []models.Crop
+	IsBuyer       bool
+	CurrentUserID int
+	Message       string
+	Error         string
 }
 
 func (h *Marketplace) MarketplaceHandler(w http.ResponseWriter, r *http.Request) {
@@ -37,42 +38,36 @@ func (h *Marketplace) MarketplaceHandler(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		log.Println("User Visited Marketplace")
-		h.render(w, farmer.IsBuyer(), "", "")
-
+		h.render(w, farmer.IsBuyer(), farmer.ID, "", "")
 	case http.MethodPost:
 		if !farmer.IsBuyer() {
-			h.render(w, farmer.IsBuyer(), "", "Only buyer accounts can place orders")
+			h.render(w, farmer.IsBuyer(), farmer.ID, "", "Only buyer accounts can place orders")
 			return
 		}
-
 		cropID, _ := strconv.Atoi(r.FormValue("crop_id"))
 		quantity, _ := strconv.ParseFloat(r.FormValue("quantity"), 64)
-
 		if err := h.order.PlaceOrder(farmer.ID, cropID, quantity); err != nil {
-			h.render(w, farmer.IsBuyer(), "", err.Error())
+			h.render(w, farmer.IsBuyer(), farmer.ID, "", err.Error())
 			return
 		}
-
-		h.render(w, farmer.IsBuyer(), "Order placed successfully!", "")
-
+		h.render(w, farmer.IsBuyer(), farmer.ID, "Order placed successfully!", "")
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func (h *Marketplace) render(w http.ResponseWriter, isBuyer bool, message, errMsg string) {
+func (h *Marketplace) render(w http.ResponseWriter, isBuyer bool, currentUserID int, message, errMsg string) {
 	crops, err := h.crop.AvailableCrops()
 	if err != nil {
 		log.Println("failed to load crops:", err)
 	}
-
 	data := MarketplacePageData{
-		Crops:   crops,
-		IsBuyer: isBuyer,
-		Message: message,
-		Error:   errMsg,
+		Crops:         crops,
+		IsBuyer:       isBuyer,
+		CurrentUserID: currentUserID,
+		Message:       message,
+		Error:         errMsg,
 	}
-
 	if err := render.RenderTemplates(w, "marketplace.html", data); err != nil {
 		log.Println("render error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

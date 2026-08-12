@@ -14,7 +14,6 @@ type Crop struct {
 	ImageURL      string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-
 	// Populated only when listing marketplace results, not stored on the row itself.
 	SellerName string
 }
