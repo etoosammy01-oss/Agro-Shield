@@ -1,3 +1,13 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html, body{
+height:100%;
+}
+
 .auth-container{
     display:grid;
 grid-template-columns:1fr 1fr;
@@ -55,11 +65,17 @@ line-height:1.7;
 display:flex;
 justify-content:center;
 align-items:center;
-background:white;
+background:#f4f4f4;
+padding:50px;
 }
 
 form{
-width:420px;
+width:100%;
+max-width:420px;
+background:white;
+padding:50px;
+border-radius:16px;
+box-shadow:0 10px 40px rgba(0,0,0,.08);
 }
 
 form h2{
@@ -82,6 +98,11 @@ border-radius:8px;
 font-size:16px;
 }
 
+input:focus{
+outline:none;
+border-color:green;
+}
+
 button{
 width:100%;
 margin-top:30px;
@@ -96,6 +117,11 @@ cursor:pointer;
 
 button:hover{
 background:darkgreen;
+}
+
+button:disabled{
+opacity:.7;
+cursor:not-allowed;
 }
 
 form p{
@@ -117,18 +143,10 @@ padding-right: 2.5rem;
 }
 
 .toggle-password {
-background: none;
-border-radius: 0;
-padding: 0;
 color: #888;
 position: absolute;
 right: 12px;
 top: 50%;
 transform: translateY(-50%);
 cursor: pointer;
-}
-
-button:disabled{
-opacity:.7;
-cursor:not-allowed;
 }
