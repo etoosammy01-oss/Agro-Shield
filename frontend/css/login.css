@@ -1,95 +1,134 @@
 .auth-container{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    min-height:100vh;
+grid-template-columns:1fr 1fr;
+min-height:100vh;
 }
 
 .auth-left{
-    background:green;
-    color:white;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    padding:80px;
+position:relative;
+overflow:hidden;
+background:green; /* fallback while image loads */
+color:white;
+display:flex;
+flex-direction:column;
+justify-content:center;
+padding:80px;
+}
+
+.background-image{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+object-fit:cover;
+transition:opacity .4s ease;
+z-index:0;
+}
+
+.overlay{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,100,0,.75);
+z-index:1;
+}
+
+.left-content{
+position:relative;
+z-index:2;
 }
 
 .auth-left h1{
-    font-size:60px;
-    margin-bottom:20px;
+font-size:60px;
+margin-bottom:20px;
 }
 
 .auth-left p{
-    font-size:22px;
-    line-height:1.7;
+font-size:22px;
+line-height:1.7;
 }
 
 .auth-right{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:white;
+display:flex;
+justify-content:center;
+align-items:center;
+background:white;
 }
 
 form{
-    width:420px;
+width:420px;
 }
 
 form h2{
-    margin-bottom:30px;
-    font-size:36px;
+margin-bottom:30px;
+font-size:36px;
 }
 
 label{
-    display:block;
-    margin-top:20px;
-    margin-bottom:8px;
-    font-weight:bold;
+display:block;
+margin-top:20px;
+margin-bottom:8px;
+font-weight:bold;
 }
 
 input{
-    width:100%;
-    padding:15px;
-    border:1px solid lightgray;
-    border-radius:8px;
-    font-size:16px;
+width:100%;
+padding:15px;
+border:1px solid lightgray;
+border-radius:8px;
+font-size:16px;
 }
 
 button{
-    width:100%;
-    margin-top:30px;
-    padding:16px;
-    font-size:18px;
-    border:none;
-    border-radius:8px;
-    background:green;
-    color:white;
-    cursor:pointer;
+width:100%;
+margin-top:30px;
+padding:16px;
+font-size:18px;
+border:none;
+border-radius:8px;
+background:green;
+color:white;
+cursor:pointer;
 }
 
 button:hover{
-    background:darkgreen;
+background:darkgreen;
 }
 
 form p{
-    margin-top:25px;
-    text-align:center;
+margin-top:25px;
+text-align:center;
 }
 
 .message{
-    margin-top:20px;
-    font-weight:bold;
+margin-top:20px;
+font-weight:bold;
 }
 
-.toggle-password{
-    display:block;
-    margin-top:8px;
-    color:green;
-    cursor:pointer;
-    font-size:14px;
-    user-select:none;
+.password-wrapper {
+position: relative;
+}
+
+.password-wrapper input {
+padding-right: 2.5rem;
+}
+
+.toggle-password {
+background: none;
+border-radius: 0;
+padding: 0;
+color: #888;
+position: absolute;
+right: 12px;
+top: 50%;
+transform: translateY(-50%);
+cursor: pointer;
 }
 
 button:disabled{
-    opacity:.7;
-    cursor:not-allowed;
+opacity:.7;
+cursor:not-allowed;
 }
