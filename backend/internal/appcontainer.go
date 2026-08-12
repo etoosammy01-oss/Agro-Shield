@@ -23,12 +23,23 @@ func NewContainer(
 	diagnosisRepo *repository.DiagnosisRepository,
 	negotiationRepo *repository.NegotiationRepository,
 	negotiationMsgRepo *repository.NegotiationMessageRepository,
+	aiProvider services.AIProvider,
 ) *Container {
 	return &Container{
-		Auth:  services.NewAuthService(farmerRepo),
-		Crop:  services.NewCropService(cropRepo),
-		Order: services.NewOrderService(orderRepo, cropRepo),
-		AI:    services.NewAIService(diagnosisRepo),
+		Auth: services.NewAuthService(farmerRepo),
+
+		Crop: services.NewCropService(cropRepo),
+
+		Order: services.NewOrderService(
+			orderRepo,
+			cropRepo,
+		),
+
+		AI: services.NewAIService(
+			diagnosisRepo,
+			aiProvider,
+		),
+
 		Negotiation: services.NewNegotiationService(
 			negotiationRepo,
 			negotiationMsgRepo,

@@ -3,15 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	app "backend/internal"
 	"backend/internal/database"
 	"backend/internal/repository"
+	"backend/internal/services"
 	"backend/routes"
 )
 
 func main() {
-
 	db, err := database.ConnectDB()
 	if err != nil {
 		log.Fatal(err)
@@ -29,11 +30,23 @@ func main() {
 	negotiationRepo := repository.NewNegotiationRepository(db)
 	negotiationMsgRepo := repository.NewNegotiationMessageRepository(db)
 
-	container := app.NewContainer(farmerRepo, cropRepo, orderRepo, diagnosisRepo, negotiationRepo, negotiationMsgRepo)
+	aiProvider := services.NewClaudeProvider(
+		os.Getenv("ANTHROPIC_API_KEY"),
+	)
+
+	container := app.NewContainer(
+		farmerRepo,
+		cropRepo,
+		orderRepo,
+		diagnosisRepo,
+		negotiationRepo,
+		negotiationMsgRepo,
+		aiProvider,
+	)
 
 	routes.RegisterRoutes(container)
 
-	log.Println("Server Starting on: http://localhost:8080 ...")
+	log.Println("Server Starting on: http://localhost:8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Println(err)
 	}

@@ -3,7 +3,6 @@ package repository
 import (
 	"backend/internal/models"
 	"database/sql"
-	"time"
 )
 
 type DiagnosisRepository struct {
@@ -44,13 +43,16 @@ func (r *DiagnosisRepository) ListByFarmer(farmerID int) ([]models.Diagnosis, er
 
 func (r *DiagnosisRepository) CountThisMonth(farmerID int) (int, error) {
 	query := `
-	SELECT COUNT(*)
-	FROM diagnoses
-	WHERE farmer_id = $1
-	  AND created_at >= date_trunc('month', $2::timestamp)
-	  AND created_at < date_trunc('month', $2::timestamp) + INTERVAL '1 month'
-`
+		SELECT COUNT(*)
+		FROM diagnoses
+		WHERE farmer_id = $1
+		  AND created_at >= date_trunc('month', CURRENT_TIMESTAMP)
+		  AND created_at < date_trunc('month', CURRENT_TIMESTAMP) + INTERVAL '1 month'
+	`
+
 	var count int
-	err := r.db.QueryRow(query, farmerID, time.Now().Format("2006-01-02")).Scan(&count)
+
+	err := r.db.QueryRow(query, farmerID).Scan(&count)
+
 	return count, err
 }
