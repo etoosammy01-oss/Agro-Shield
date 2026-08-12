@@ -29,7 +29,7 @@
             <h1>Storage Management</h1>
             <p>Register your produce and choose what to list on the Marketplace.</p>
         </div>
-        <button id="add-btn" type="button">Add Produce</button>
+        <button id="add-btn" type="button">Add product</button>
     </div>
 
     {{if .Error}}
@@ -66,7 +66,7 @@
                 <td>{{.CreatedAt.Format "02 Jan 2006"}}</td>
             </tr>
             {{else}}
-            <tr><td colspan="8">No produce in storage yet — add your first item above.</td></tr>
+            <tr><td colspan="8">No product in storage yet — add your first item above.</td></tr>
             {{end}}
         </tbody>
     </table>
