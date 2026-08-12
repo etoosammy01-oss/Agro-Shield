@@ -16,16 +16,19 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 func (r *OrderRepository) Create(order *models.Order) error {
 	query := `
 	INSERT INTO orders (buyer_id, crop_id, quantity, total_price, status)
-	VALUES (?, ?, ?, ?, ?)
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING id
 	`
-	res, err := r.db.Exec(query, order.BuyerID, order.CropID, order.Quantity, order.TotalPrice, order.Status)
-	if err != nil {
-		return err
-	}
-	if id, err := res.LastInsertId(); err == nil {
-		order.ID = int(id)
-	}
-	return nil
+	err := r.db.QueryRow(
+		query,
+		order.BuyerID,
+		order.CropID,
+		order.Quantity,
+		order.TotalPrice,
+		order.Status,
+	).Scan(&order.ID)
+
+	return err
 }
 
 // ListByBuyer returns everything a buyer has purchased, with the crop name
@@ -37,7 +40,7 @@ func (r *OrderRepository) ListByBuyer(buyerID int) ([]models.Order, error) {
 	FROM orders
 	JOIN crops ON crops.id = orders.crop_id
 	JOIN farmers ON farmers.id = crops.farmer_id
-	WHERE orders.buyer_id = ?
+	WHERE orders.buyer_id = $1
 	ORDER BY orders.created_at DESC
 	`
 	rows, err := r.db.Query(query, buyerID)
@@ -66,7 +69,7 @@ func (r *OrderRepository) ListSalesByFarmer(farmerID int) ([]models.Order, error
 	FROM orders
 	JOIN crops ON crops.id = orders.crop_id
 	JOIN farmers ON farmers.id = orders.buyer_id
-	WHERE crops.farmer_id = ?
+	WHERE crops.farmer_id = $1
 	ORDER BY orders.created_at DESC
 	`
 	rows, err := r.db.Query(query, farmerID)

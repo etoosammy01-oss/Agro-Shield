@@ -15,7 +15,7 @@ func NewDiagnosisRepository(db *sql.DB) *DiagnosisRepository {
 }
 
 func (r *DiagnosisRepository) Create(d *models.Diagnosis) error {
-	query := `INSERT INTO diagnoses (farmer_id, image_name, result) VALUES (?, ?, ?)`
+	query := `INSERT INTO diagnoses (farmer_id, image_name, result) VALUES ($1, $2, $3)`
 	_, err := r.db.Exec(query, d.FarmerID, d.ImageName, d.Result)
 	return err
 }
@@ -23,7 +23,7 @@ func (r *DiagnosisRepository) Create(d *models.Diagnosis) error {
 func (r *DiagnosisRepository) ListByFarmer(farmerID int) ([]models.Diagnosis, error) {
 	query := `
 	SELECT id, farmer_id, image_name, result, created_at
-	FROM diagnoses WHERE farmer_id = ? ORDER BY created_at DESC
+	FROM diagnoses WHERE farmer_id = $1 ORDER BY created_at DESC
 	`
 	rows, err := r.db.Query(query, farmerID)
 	if err != nil {
@@ -44,9 +44,12 @@ func (r *DiagnosisRepository) ListByFarmer(farmerID int) ([]models.Diagnosis, er
 
 func (r *DiagnosisRepository) CountThisMonth(farmerID int) (int, error) {
 	query := `
-	SELECT COUNT(*) FROM diagnoses
-	WHERE farmer_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', ?)
-	`
+	SELECT COUNT(*)
+	FROM diagnoses
+	WHERE farmer_id = $1
+	  AND created_at >= date_trunc('month', $2::timestamp)
+	  AND created_at < date_trunc('month', $2::timestamp) + INTERVAL '1 month'
+`
 	var count int
 	err := r.db.QueryRow(query, farmerID, time.Now().Format("2006-01-02")).Scan(&count)
 	return count, err

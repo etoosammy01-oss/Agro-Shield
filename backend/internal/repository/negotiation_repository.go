@@ -16,25 +16,30 @@ func NewNegotiationRepository(db *sql.DB) *NegotiationRepository {
 func (r *NegotiationRepository) Create(n *models.Negotiation) error {
 	query := `
 	INSERT INTO negotiations (crop_id, buyer_id, farmer_id, quantity, status, round_count, max_rounds, expires_at)
-	VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+	VALUES ($1, $2, $3, $4, $5, 0, $6, $7)
+RETURNING id
 	`
-	res, err := r.db.Exec(query, n.CropID, n.BuyerID, n.FarmerID, n.Quantity, n.Status, n.MaxRounds, n.ExpiresAt)
-	if err != nil {
-		return err
-	}
-	if id, err := res.LastInsertId(); err == nil {
-		n.ID = int(id)
-	}
-	return nil
+	err := r.db.QueryRow(
+		query,
+		n.CropID,
+		n.BuyerID,
+		n.FarmerID,
+		n.Quantity,
+		n.Status,
+		n.MaxRounds,
+		n.ExpiresAt,
+	).Scan(&n.ID)
+
+	return err
 }
 
 func (r *NegotiationRepository) IncrementRound(id int) error {
-	_, err := r.db.Exec(`UPDATE negotiations SET round_count = round_count + 1 WHERE id = ?`, id)
+	_, err := r.db.Exec(`UPDATE negotiations SET round_count = round_count + 1 WHERE id = $1`, id)
 	return err
 }
 
 func (r *NegotiationRepository) UpdateStatus(id int, status string) error {
-	_, err := r.db.Exec(`UPDATE negotiations SET status = ? WHERE id = ?`, status, id)
+	_, err := r.db.Exec(`UPDATE negotiations SET status = $1 WHERE id = $2`, status, id)
 	return err
 }
 
@@ -48,7 +53,7 @@ func (r *NegotiationRepository) GetByID(id int) (*models.Negotiation, error) {
 	JOIN crops ON crops.id = negotiations.crop_id
 	JOIN farmers buyer ON buyer.id = negotiations.buyer_id
 	JOIN farmers seller ON seller.id = negotiations.farmer_id
-	WHERE negotiations.id = ?
+	WHERE negotiations.id = $1
 	`
 	var n models.Negotiation
 	err := r.db.QueryRow(query, id).Scan(
@@ -75,7 +80,7 @@ func (r *NegotiationRepository) ListForUser(userID int) ([]models.Negotiation, e
 	JOIN crops ON crops.id = negotiations.crop_id
 	JOIN farmers buyer ON buyer.id = negotiations.buyer_id
 	JOIN farmers seller ON seller.id = negotiations.farmer_id
-	WHERE negotiations.buyer_id = ? OR negotiations.farmer_id = ?
+	WHERE negotiations.buyer_id = $1 OR negotiations.farmer_id = $2
 	ORDER BY negotiations.created_at DESC
 	`
 	rows, err := r.db.Query(query, userID, userID)

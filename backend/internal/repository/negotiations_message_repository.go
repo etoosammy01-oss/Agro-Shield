@@ -16,8 +16,7 @@ func NewNegotiationMessageRepository(db *sql.DB) *NegotiationMessageRepository {
 func (r *NegotiationMessageRepository) Create(m *models.NegotiationMessage) error {
 	query := `
 	INSERT INTO negotiation_messages (negotiation_id, sender_id, offer_price, message)
-	VALUES (?, ?, ?, ?)
-	`
+    VALUES ($1, $2, $3, $4)	`
 	_, err := r.db.Exec(query, m.NegotiationID, m.SenderID, m.OfferPrice, m.Message)
 	return err
 }
@@ -26,7 +25,7 @@ func (r *NegotiationMessageRepository) ListByNegotiation(negotiationID int) ([]m
 	query := `
 	SELECT id, negotiation_id, sender_id, offer_price, message, created_at
 	FROM negotiation_messages
-	WHERE negotiation_id = ?
+	WHERE negotiation_id = $1
 	ORDER BY created_at ASC
 	`
 	rows, err := r.db.Query(query, negotiationID)
@@ -52,7 +51,7 @@ func (r *NegotiationMessageRepository) LastOffer(negotiationID int) (*models.Neg
 	query := `
 	SELECT id, negotiation_id, sender_id, offer_price, message, created_at
 	FROM negotiation_messages
-	WHERE negotiation_id = ?
+	WHERE negotiation_id = $1
 	ORDER BY created_at DESC
 	LIMIT 1
 	`

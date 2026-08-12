@@ -19,7 +19,8 @@ func (r *FarmerRepository) Create(farmer *models.Farmer) error {
 	query := `
 	INSERT INTO farmers
 	(full_name, phone, password_hash, location, role)
-	VALUES (?, ?, ?, ?, ?)
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING id
 	`
 
 	_, err := r.db.Exec(
@@ -48,7 +49,7 @@ func (r *FarmerRepository) GetByPhone(phone string) (*models.Farmer, error) {
 		created_at,
 		updated_at
 	FROM farmers
-	WHERE phone = ?
+	WHERE phone = $1
 	`
 
 	var farmer models.Farmer
@@ -89,7 +90,7 @@ func (r *FarmerRepository) GetByID(id int) (*models.Farmer, error) {
 		created_at,
 		updated_at
 	FROM farmers
-	WHERE id = ?
+	WHERE id = $1
 	`
 
 	var farmer models.Farmer
@@ -120,8 +121,8 @@ func (r *FarmerRepository) GetByID(id int) (*models.Farmer, error) {
 func (r *FarmerRepository) UpdateProfile(id int, fullName, phone, location string) error {
 	query := `
 	UPDATE farmers
-	SET full_name = ?, phone = ?, location = ?, updated_at = CURRENT_TIMESTAMP
-	WHERE id = ?
+	SET full_name = $1, phone = $2, location = $3, updated_at = CURRENT_TIMESTAMP
+	WHERE id = $4
 	`
 	_, err := r.db.Exec(query, fullName, phone, location, id)
 	return err
@@ -130,7 +131,7 @@ func (r *FarmerRepository) UpdateProfile(id int, fullName, phone, location strin
 // UpdatePhoto sets the farmer's passport photograph URL.
 func (r *FarmerRepository) UpdatePhoto(id int, photoURL string) error {
 	_, err := r.db.Exec(
-		`UPDATE farmers SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		`UPDATE farmers SET photo_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
 		photoURL,
 		id,
 	)
@@ -140,7 +141,7 @@ func (r *FarmerRepository) UpdatePhoto(id int, photoURL string) error {
 // UpdatePassword sets a new password hash.
 func (r *FarmerRepository) UpdatePassword(id int, passwordHash string) error {
 	_, err := r.db.Exec(
-		`UPDATE farmers SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		`UPDATE farmers SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
 		passwordHash,
 		id,
 	)
