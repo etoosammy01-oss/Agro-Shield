@@ -30,9 +30,12 @@ func main() {
 	negotiationRepo := repository.NewNegotiationRepository(db)
 	negotiationMsgRepo := repository.NewNegotiationMessageRepository(db)
 
-	aiProvider := services.NewClaudeProvider(
-		os.Getenv("ANTHROPIC_API_KEY"),
+	aiProvider, err := services.NewGeminiProvider(
+		os.Getenv("GEMINI_API_KEY"),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	container := app.NewContainer(
 		farmerRepo,
