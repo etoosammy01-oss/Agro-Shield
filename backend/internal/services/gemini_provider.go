@@ -14,7 +14,7 @@ type GeminiProvider struct {
 
 func NewGeminiProvider(apiKey string) (*GeminiProvider, error) {
 	if apiKey == "" {
-		return nil, errors.New("Gemini API key is missing")
+		return nil, errors.New("gemini API key is missing")
 	}
 
 	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
@@ -27,7 +27,7 @@ func NewGeminiProvider(apiKey string) (*GeminiProvider, error) {
 
 	return &GeminiProvider{
 		client: client,
-		model:  "gemini-2.5-pro",
+		model:  "gemini-3.6-flash",
 	}, nil
 }
 
@@ -43,9 +43,35 @@ func (p *GeminiProvider) Analyze(
 		return nil, errors.New("no information was provided")
 	}
 
-	prompt := `You are Agro-Shield AI, an agricultural assistant.
+	prompt := `You are Agro-Shield AI, a friendly agricultural assistant.
 
-Analyze the farmer's request and provide useful farming guidance.
+Your users are everyday farmers. Explain everything in very simple English.
+Use short sentences and common words.
+
+Do not use difficult scientific words unless necessary.
+If you use a difficult word, explain its meaning immediately.
+
+Do not use Markdown.
+Do not use symbols such as **, ##, ###, or horizontal lines.
+Do not write a long introduction.
+Do not repeat the farmer's question.
+
+Use this exact format:
+
+Problem:
+Explain the likely problem in one or two simple sentences.
+
+What I noticed:
+Give up to three simple signs that support your answer.
+
+What you should do:
+Give three to five clear actions the farmer can take.
+
+Important:
+Say clearly when you are not certain.
+Do not claim that your answer is a guaranteed diagnosis.
+Tell the farmer to contact a local agricultural officer or veterinarian
+if the problem may be serious.
 
 Category:
 ` + request.Category + `
@@ -53,13 +79,8 @@ Category:
 Farmer's description:
 ` + request.Description + `
 
-Give:
-1. The likely problem, condition, or answer.
-2. The signs or information that support your answer.
-3. Practical recommended actions.
-
-If the information or media is unclear, say that the result is uncertain.
-Do not claim that your answer is a guaranteed diagnosis.`
+Analyze the attached image, audio, or video if one was provided.
+Keep the complete answer below 250 words.`
 
 	parts := []*genai.Part{
 		{Text: prompt},
@@ -109,7 +130,7 @@ Do not claim that your answer is a guaranteed diagnosis.`
 	}
 
 	if result == nil || len(result.Candidates) == 0 {
-		return nil, errors.New("Gemini returned no response")
+		return nil, errors.New("gemini returned no response")
 	}
 
 	for _, candidate := range result.Candidates {
@@ -126,5 +147,5 @@ Do not claim that your answer is a guaranteed diagnosis.`
 		}
 	}
 
-	return nil, errors.New("Gemini returned no diagnosis text")
+	return nil, errors.New("gemini returned no diagnosis text")
 }
