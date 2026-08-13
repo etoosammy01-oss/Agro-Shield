@@ -77,7 +77,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Crop</th>
+                        <th>Product</th>
                         <th>Seller</th>
                         <th>Qty</th>
                         <th>Total</th>
@@ -106,20 +106,20 @@
 
         <div class="card">
 
-            <h2>My Crops</h2>
+            <h2>My Products</h2>
 
-            {{if .Crops}}
+            {{if .Products}}
             <table>
                 <thead>
                     <tr>
-                        <th>Crop</th>
+                        <th>Product</th>
                         <th>Quantity</th>
                         <th>Listed for Sale</th>
                         <th>Price/Unit</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .Crops}}
+                    {{range .Products}}
                     <tr>
                         <td>{{.Name}}</td>
                         <td>{{.Quantity}} {{.Unit}}</td>
@@ -130,7 +130,7 @@
                 </tbody>
             </table>
             {{else}}
-            <p>No crops added yet. <a href="/storage">Register your first crop</a></p>
+            <p>No product added yet. <a href="/storage">Register your first product</a></p>
             {{end}}
 
         </div>
@@ -143,7 +143,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Crop</th>
+                        <th>Product</th>
                         <th>Buyer</th>
                         <th>Qty</th>
                         <th>Total</th>
