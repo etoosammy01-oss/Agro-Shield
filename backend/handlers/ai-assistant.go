@@ -39,6 +39,7 @@ func (h *AIAssistant) Handler(w http.ResponseWriter, r *http.Request) {
 		h.render(w, farmer.ID, "", "")
 
 	case http.MethodPost:
+		// 1. Limit max request memory to 50MB
 		if err := r.ParseMultipartForm(50 << 20); err != nil {
 			h.render(
 				w,
@@ -48,8 +49,14 @@ func (h *AIAssistant) Handler(w http.ResponseWriter, r *http.Request) {
 			)
 			return
 		}
+		// Clean up temporary multipart files when request finishes
+		defer func() {
+			if r.MultipartForm != nil {
+				_ = r.MultipartForm.RemoveAll()
+			}
+		}()
 
-		// Create the request that will be sent to the AI service.
+		// 2. Create the request that will be sent to the AI service
 		request := services.AIRequest{
 			Category:    r.FormValue("category"),
 			Description: r.FormValue("description"),
@@ -58,7 +65,6 @@ func (h *AIAssistant) Handler(w http.ResponseWriter, r *http.Request) {
 		// --------------------------------------------------
 		// OPTIONAL IMAGE
 		// --------------------------------------------------
-
 		if file, header, err := r.FormFile("image"); err == nil {
 			defer file.Close()
 
@@ -73,13 +79,16 @@ func (h *AIAssistant) Handler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			request.ImageType = header.Header.Get("Content-Type")
+			mime := header.Header.Get("Content-Type")
+			if mime == "" || mime == "application/octet-stream" {
+				mime = "image/jpeg"
+			}
+			request.ImageType = mime
 		}
 
 		// --------------------------------------------------
 		// OPTIONAL AUDIO
 		// --------------------------------------------------
-
 		if file, header, err := r.FormFile("audio"); err == nil {
 			defer file.Close()
 
@@ -94,13 +103,16 @@ func (h *AIAssistant) Handler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			request.AudioType = header.Header.Get("Content-Type")
+			mime := header.Header.Get("Content-Type")
+			if mime == "" || mime == "application/octet-stream" {
+				mime = "audio/mp3"
+			}
+			request.AudioType = mime
 		}
 
 		// --------------------------------------------------
 		// OPTIONAL VIDEO
 		// --------------------------------------------------
-
 		if file, header, err := r.FormFile("video"); err == nil {
 			defer file.Close()
 
@@ -115,13 +127,16 @@ func (h *AIAssistant) Handler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			request.VideoType = header.Header.Get("Content-Type")
+			mime := header.Header.Get("Content-Type")
+			if mime == "" || mime == "application/octet-stream" {
+				mime = "video/mp4"
+			}
+			request.VideoType = mime
 		}
 
 		// --------------------------------------------------
 		// SEND REQUEST TO AI SERVICE
 		// --------------------------------------------------
-
 		diagnosis, err := h.ai.Diagnose(
 			farmer.ID,
 			request,
