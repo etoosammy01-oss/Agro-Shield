@@ -61,10 +61,12 @@
 
             <p><strong>Full Name:</strong> {{.FullName}}</p>
             <p><strong>Phone:</strong> {{.Phone}}</p>
+            <p><strong>Email:</strong> {{.Email}}</p>
             <p><strong>Location:</strong> {{.Location}}</p>
             <p><strong>Account Type:</strong> {{if .IsBuyer}}Buyer{{else}}Farmer{{end}}</p>
             <p><strong>Member Since:</strong> {{.CreatedAt.Format "January 2006"}}</p>
-
+            <p><strong>Full Name:</strong> {{.FullName}}</p>
+            
         </div>
 
         {{if .IsBuyer}}

@@ -21,7 +21,7 @@ func NewAuthService(repo *repository.FarmerRepository) *AuthService {
 
 // Register creates a new farmer or buyer account. role should be "farmer" or
 // "buyer" — anything else defaults to "farmer".
-func (s *AuthService) Register(firstName, lastName, phone, password, location, role string) error {
+func (s *AuthService) Register(firstName, lastName, phone, email, password, location, role string) error {
 
 	if firstName == "" || lastName == "" {
 		return errors.New("name is required")
@@ -55,6 +55,7 @@ func (s *AuthService) Register(firstName, lastName, phone, password, location, r
 	farmer := &models.Farmer{
 		FullName:     firstName + " " + lastName,
 		Phone:        phone,
+		Email:        email,
 		PasswordHash: string(hash),
 		Location:     location,
 		Role:         role,
@@ -102,7 +103,6 @@ func (s *AuthService) UpdateProfile(id int, fullName, phone, location string) er
 	return s.repo.UpdateProfile(id, fullName, phone, location)
 }
 
-// UpdatePhoto sets the user's passport photograph.
 // UpdatePhoto sets the user's passport photograph.
 func (s *AuthService) UpdatePhoto(id int, photoURL string) error {
 	if photoURL == "" {

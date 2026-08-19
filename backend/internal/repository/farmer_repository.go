@@ -18,30 +18,29 @@ func NewFarmerRepository(db *sql.DB) *FarmerRepository {
 func (r *FarmerRepository) Create(farmer *models.Farmer) error {
 	query := `
 	INSERT INTO farmers
-	(full_name, phone, password_hash, location, role)
-	VALUES ($1, $2, $3, $4, $5)
+	(full_name, phone, email, password_hash, location, role)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id
 	`
-
 	_, err := r.db.Exec(
 		query,
 		farmer.FullName,
 		farmer.Phone,
+		farmer.Email,
 		farmer.PasswordHash,
 		farmer.Location,
 		farmer.Role,
 	)
-
 	return err
 }
 
 func (r *FarmerRepository) GetByPhone(phone string) (*models.Farmer, error) {
-
 	query := `
 	SELECT
 		id,
 		full_name,
 		phone,
+		COALESCE(email, '') AS email,
 		password_hash,
 		location,
 		role,
@@ -51,13 +50,12 @@ func (r *FarmerRepository) GetByPhone(phone string) (*models.Farmer, error) {
 	FROM farmers
 	WHERE phone = $1
 	`
-
 	var farmer models.Farmer
-
 	err := r.db.QueryRow(query, phone).Scan(
 		&farmer.ID,
 		&farmer.FullName,
 		&farmer.Phone,
+		&farmer.Email,
 		&farmer.PasswordHash,
 		&farmer.Location,
 		&farmer.Role,
@@ -65,24 +63,22 @@ func (r *FarmerRepository) GetByPhone(phone string) (*models.Farmer, error) {
 		&farmer.CreatedAt,
 		&farmer.UpdatedAt,
 	)
-
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-
 	return &farmer, nil
 }
 
 func (r *FarmerRepository) GetByID(id int) (*models.Farmer, error) {
-
 	query := `
 	SELECT
 		id,
 		full_name,
 		phone,
+		COALESCE(email, '') AS email,
 		password_hash,
 		location,
 		role,
@@ -92,13 +88,12 @@ func (r *FarmerRepository) GetByID(id int) (*models.Farmer, error) {
 	FROM farmers
 	WHERE id = $1
 	`
-
 	var farmer models.Farmer
-
 	err := r.db.QueryRow(query, id).Scan(
 		&farmer.ID,
 		&farmer.FullName,
 		&farmer.Phone,
+		&farmer.Email,
 		&farmer.PasswordHash,
 		&farmer.Location,
 		&farmer.Role,
@@ -106,14 +101,12 @@ func (r *FarmerRepository) GetByID(id int) (*models.Farmer, error) {
 		&farmer.CreatedAt,
 		&farmer.UpdatedAt,
 	)
-
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-
 	return &farmer, nil
 }
 

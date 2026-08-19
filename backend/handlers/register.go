@@ -54,6 +54,7 @@ func (h *Register) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			user.First_Name,
 			user.Last_Name,
 			user.Phone,
+			user.Email,
 			user.Password,
 			location,
 			user.Role,

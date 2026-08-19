@@ -6,6 +6,7 @@ type Farmer struct {
 	ID           int
 	FullName     string
 	Phone        string
+	Email        string
 	PasswordHash string
 	Location     string
 	Role         string // "farmer" or "buyer"
