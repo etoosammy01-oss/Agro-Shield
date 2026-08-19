@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"backend/internal/models"
 	"backend/internal/services"
@@ -174,7 +175,12 @@ func (h *AIAssistant) render(
 	result string,
 	errMsg string,
 ) {
+	historyStart := time.Now()
+
+	log.Println("⏱️ Loading diagnosis history")
+
 	history, err := h.ai.History(farmerID)
+
 	if err != nil {
 		log.Println(
 			"failed to load diagnosis history:",
@@ -182,6 +188,8 @@ func (h *AIAssistant) render(
 		)
 	}
 
+	log.Printf("⏱️ History loading took: %v", time.Since(historyStart))
+	log.Printf("⏱️ History loading took: %v", time.Since(historyStart))
 	data := AIAssistantPageData{
 		History: history,
 		Result:  result,

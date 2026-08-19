@@ -7,41 +7,84 @@ import (
 	"google.golang.org/genai"
 )
 
+// ============================================================
+// 1. GEMINI PROVIDER
+// This struct holds the Gemini client and the model we want to use.
+// ============================================================
+
 type GeminiProvider struct {
 	client *genai.Client
 	model  string
 }
 
+// ============================================================
+// 2. CREATE GEMINI PROVIDER
+// This function connects Agro-Shield to Gemini.
+// ============================================================
+
 func NewGeminiProvider(apiKey string) (*GeminiProvider, error) {
+
+	// Check that the Gemini API key was provided.
 	if apiKey == "" {
 		return nil, errors.New("gemini API key is missing")
 	}
 
-	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
-		APIKey:  apiKey,
-		Backend: genai.BackendGeminiAPI,
-	})
+	// Create the Gemini client.
+	client, err := genai.NewClient(
+		context.Background(),
+		&genai.ClientConfig{
+			APIKey:  apiKey,
+			Backend: genai.BackendGeminiAPI,
+		},
+	)
+
+	// If Gemini client creation fails, return the error.
 	if err != nil {
 		return nil, err
 	}
 
+	// Return the Gemini provider Agro-Shield will use.
 	return &GeminiProvider{
 		client: client,
-		model:  "gemini-3.6-flash",
+
+		// The AI model Agro-Shield is currently using.
+		model: "gemini-3.5-flash",
 	}, nil
 }
+
+// ============================================================
+// 3. ANALYZE FARMER REQUEST
+// This function sends the farmer's information to Gemini.
+//
+// It can receive:
+// - Text
+// - Image
+// - Audio
+// - Video
+// ============================================================
 
 func (p *GeminiProvider) Analyze(
 	request AIRequest,
 ) (*DiagnosisResult, error) {
+
+	// ========================================================
+	// 4. CHECK FARMER INPUT
+	// Make sure the farmer actually sent something.
+	// ========================================================
 
 	if request.Category == "" &&
 		request.Description == "" &&
 		len(request.Image) == 0 &&
 		len(request.Audio) == 0 &&
 		len(request.Video) == 0 {
+
 		return nil, errors.New("no information was provided")
 	}
+
+	// ========================================================
+	// 5. AGRO-SHIELD AI INSTRUCTIONS
+	// This tells Gemini how Agro-Shield should talk to farmers.
+	// ========================================================
 
 	prompt := `You are Agro-Shield AI, a friendly farming assistant for everyday farmers in Nigeria.
 
@@ -98,6 +141,7 @@ Always focus on giving advice the farmer can understand and act on.
 Your goal is not to impress the farmer with big words.
 
 Your goal is to help the farmer understand the problem and know what to do next.
+
 Category:
 ` + request.Category + `
 
@@ -107,9 +151,21 @@ Farmer's description:
 Analyze the attached image, audio, or video if one was provided.
 Keep the complete answer below 250 words.`
 
+	// ========================================================
+	// 6. CREATE AI REQUEST PARTS
+	// Start with the text instructions.
+	// ========================================================
+
 	parts := []*genai.Part{
-		{Text: prompt},
+		{
+			Text: prompt,
+		},
 	}
+
+	// ========================================================
+	// 7. ADD IMAGE
+	// If the farmer sent an image, attach it to the AI request.
+	// ========================================================
 
 	if len(request.Image) > 0 {
 		parts = append(parts, &genai.Part{
@@ -120,6 +176,11 @@ Keep the complete answer below 250 words.`
 		})
 	}
 
+	// ========================================================
+	// 8. ADD AUDIO
+	// If the farmer sent a voice recording, attach it.
+	// ========================================================
+
 	if len(request.Audio) > 0 {
 		parts = append(parts, &genai.Part{
 			InlineData: &genai.Blob{
@@ -128,6 +189,11 @@ Keep the complete answer below 250 words.`
 			},
 		})
 	}
+
+	// ========================================================
+	// 9. ADD VIDEO
+	// If the farmer sent a video, attach it.
+	// ========================================================
 
 	if len(request.Video) > 0 {
 		parts = append(parts, &genai.Part{
@@ -138,32 +204,69 @@ Keep the complete answer below 250 words.`
 		})
 	}
 
+	// ========================================================
+	// 10. BUILD THE GEMINI CONTENT
+	// Put all the information together before sending it.
+	// ========================================================
+
 	contents := []*genai.Content{
 		{
 			Parts: parts,
 		},
 	}
 
+	// ========================================================
+	// 11. SEND REQUEST TO GEMINI
+	// This is the part that was taking about 16.8 seconds.
+	//
+	// We are now:
+	// - Limiting the answer size
+	// - Turning thinking off for this test
+	// ========================================================
+
 	result, err := p.client.Models.GenerateContent(
 		context.Background(),
 		p.model,
 		contents,
-		nil,
+		&genai.GenerateContentConfig{
+			MaxOutputTokens: 300,
+
+			ThinkingConfig: &genai.ThinkingConfig{
+				ThinkingBudget: genai.Ptr[int32](0),
+			},
+		},
 	)
+
+	// If Gemini gives an error, return it.
 	if err != nil {
 		return nil, err
 	}
+
+	// ========================================================
+	// 12. CHECK GEMINI RESPONSE
+	// Make sure Gemini actually returned something.
+	// ========================================================
 
 	if result == nil || len(result.Candidates) == 0 {
 		return nil, errors.New("gemini returned no response")
 	}
 
+	// ========================================================
+	// 13. GET THE AI'S TEXT
+	// Find the text inside Gemini's response.
+	// ========================================================
+
 	for _, candidate := range result.Candidates {
+
+		// Skip candidates that have no content.
 		if candidate.Content == nil {
 			continue
 		}
 
+		// Look through the returned parts.
 		for _, part := range candidate.Content.Parts {
+
+			// We found the AI's answer.
 			if part.Text != "" {
 				return &DiagnosisResult{
 					Result: part.Text,
@@ -171,6 +274,11 @@ Keep the complete answer below 250 words.`
 			}
 		}
 	}
+
+	// ========================================================
+	// 14. NO DIAGNOSIS FOUND
+	// Gemini responded, but we couldn't find usable text.
+	// ========================================================
 
 	return nil, errors.New("gemini returned no diagnosis text")
 }

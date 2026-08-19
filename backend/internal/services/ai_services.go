@@ -2,11 +2,12 @@ package services
 
 import (
 	"errors"
+	"log"
+	"time"
 
 	"backend/internal/models"
 	"backend/internal/repository"
 )
-
 type AIService struct {
 	repo     *repository.DiagnosisRepository
 	provider AIProvider
@@ -35,10 +36,16 @@ func (s *AIService) Diagnose(
 		return nil, errors.New("no information was provided")
 	}
 
-	aiResult, err := s.provider.Analyze(request)
-	if err != nil {
-		return nil, err
-	}
+	aiStart := time.Now()
+log.Println("⏱️ AI analysis started")
+
+aiResult, err := s.provider.Analyze(request)
+
+log.Printf("⏱️ AI analysis took: %v", time.Since(aiStart))
+
+if err != nil {
+	return nil, err
+}
 
 	diagnosis := &models.Diagnosis{
 		FarmerID:    farmerID,
@@ -47,9 +54,14 @@ func (s *AIService) Diagnose(
 		Result:      aiResult.Result,
 	}
 
-	if err := s.repo.Create(diagnosis); err != nil {
-		return nil, err
-	}
+	dbStart := time.Now()
+log.Println("⏱️ Saving diagnosis to database")
+
+if err := s.repo.Create(diagnosis); err != nil {
+	return nil, err
+}
+
+log.Printf("⏱️ Database save took: %v", time.Since(dbStart))
 
 	return diagnosis, nil
 }
