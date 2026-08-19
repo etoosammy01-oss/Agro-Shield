@@ -93,14 +93,14 @@ func (s *AuthService) GetFarmerByID(id int) (*models.Farmer, error) {
 }
 
 // UpdateProfile edits a user's name, phone and location.
-func (s *AuthService) UpdateProfile(id int, fullName, phone, location string) error {
+func (s *AuthService) UpdateProfile(id int, fullName, phone, email, location string) error {
 	if fullName == "" {
 		return errors.New("full name is required")
 	}
 	if phone == "" {
 		return errors.New("phone is required")
 	}
-	return s.repo.UpdateProfile(id, fullName, phone, location)
+	return s.repo.UpdateProfile(id, fullName, phone, email, location)
 }
 
 // UpdatePhoto sets the user's passport photograph.
