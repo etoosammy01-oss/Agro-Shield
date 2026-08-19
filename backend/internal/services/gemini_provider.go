@@ -167,14 +167,27 @@ Keep the complete answer below 250 words.`
 	// If the farmer sent an image, attach it to the AI request.
 	// ========================================================
 
-	if len(request.Image) > 0 {
-		parts = append(parts, &genai.Part{
-			InlineData: &genai.Blob{
-				Data:     request.Image,
-				MIMEType: request.ImageType,
-			},
-		})
+	// ============================================================
+// PROCESS IMAGE BEFORE SENDING TO GEMINI
+//
+// Large phone images can make AI analysis slow.
+// We resize and compress the image first.
+// ============================================================
+
+if len(request.Image) > 0 {
+
+	processedImage, err := prepareImage(request.Image)
+	if err != nil {
+		return nil, errors.New("could not process image")
 	}
+
+	parts = append(parts, &genai.Part{
+		InlineData: &genai.Blob{
+			Data:     processedImage,
+			MIMEType: "image/jpeg",
+		},
+	})
+}
 
 	// ========================================================
 	// 8. ADD AUDIO
