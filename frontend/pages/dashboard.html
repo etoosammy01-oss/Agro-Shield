@@ -204,138 +204,130 @@
          STATISTICS
     ========================================== -->
 
-    <section class="stats">
+<section class="stats">
+
+    {{if .IsBuyer}}
+
+    <a href="/purchases" class="stat-card">
+
+        <h3>
+            Purchases Made
+        </h3>
+
+        <h2
+            class="counter"
+            data-target="{{.PurchasesMade}}"
+        >
+            0
+        </h2>
+
+        <p>
+            Total Orders
+        </p>
+
+    </a>
 
 
-        {{if .IsBuyer}}
+    <a href="/purchases" class="stat-card">
+
+        <h3>
+            Total Spent
+        </h3>
+
+        <h2>
+            ₦{{printf "%.2f" .TotalSpent}}
+        </h2>
+
+        <p>
+            All Time
+        </p>
+
+    </a>
 
 
-        <div class="stat-card">
-
-            <h3>
-                Purchases Made
-            </h3>
-
-            <h2
-                class="counter"
-                data-target="{{.PurchasesMade}}"
-            >
-                0
-            </h2>
-
-            <p>
-                Total Orders
-            </p>
-
-        </div>
+    {{else}}
 
 
+    <a href="/storage" class="stat-card">
 
-        <div class="stat-card">
+        <h3>
+            Produce in Storage
+        </h3>
 
-            <h3>
-                Total Spent
-            </h3>
+        <h2
+            class="counter"
+            data-target="{{.ProduceInStorage}}"
+        >
+            0
+        </h2>
 
-            <h2>
-                ₦{{printf "%.2f" .TotalSpent}}
-            </h2>
+        <p>
+            Items Available
+        </p>
 
-            <p>
-                All Time
-            </p>
-
-        </div>
-
-
-        {{else}}
-
-
-        <div class="stat-card">
-
-            <h3>
-                Produce in Storage
-            </h3>
-
-            <h2
-                class="counter"
-                data-target="{{.ProduceInStorage}}"
-            >
-                0
-            </h2>
-
-            <p>
-                Items Available
-            </p>
-
-        </div>
+    </a>
 
 
+    <a href="/marketplace" class="stat-card">
 
-        <div class="stat-card">
+        <h3>
+            Marketplace Listings
+        </h3>
 
-            <h3>
-                Marketplace Listings
-            </h3>
+        <h2
+            class="counter"
+            data-target="{{.ListingsActive}}"
+        >
+            0
+        </h2>
 
-            <h2
-                class="counter"
-                data-target="{{.ListingsActive}}"
-            >
-                0
-            </h2>
+        <p>
+            Active Listings
+        </p>
 
-            <p>
-                Active Listings
-            </p>
-
-        </div>
-
+    </a>
 
 
-        <div class="stat-card">
+    <a href="/ai-assistant" class="stat-card">
 
-            <h3>
-                AI Diagnoses
-            </h3>
+        <h3>
+            AI Diagnoses
+        </h3>
 
-            <h2
-                class="counter"
-                data-target="{{.AIDiagnosesThisMonth}}"
-            >
-                0
-            </h2>
+        <h2
+            class="counter"
+            data-target="{{.AIDiagnosesThisMonth}}"
+        >
+            0
+        </h2>
 
-            <p>
-                This Month
-            </p>
+        <p>
+            This Month
+        </p>
 
-        </div>
-
-
-
-        <div class="stat-card">
-
-            <h3>
-                Revenue
-            </h3>
-
-            <h2>
-                ₦{{printf "%.2f" .Revenue}}
-            </h2>
-
-            <p>
-                Total Sales
-            </p>
-
-        </div>
+    </a>
 
 
-        {{end}}
+    <a href="/marketplace" class="stat-card">
+
+        <h3>
+            Revenue
+        </h3>
+
+        <h2>
+            ₦{{printf "%.2f" .Revenue}}
+        </h2>
+
+        <p>
+            Total Sales
+        </p>
+
+    </a>
 
 
-    </section>
+    {{end}}
 
+</section>
 
 
     <!-- =========================================
@@ -397,7 +389,7 @@
             >
 
                 <h3>
-                    📦 Storage
+                    📦 Manage Your Storage
                 </h3>
 
                 <p>

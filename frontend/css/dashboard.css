@@ -349,20 +349,64 @@
 }
 
 
+/* =========================================
+   STAT CARD
+========================================= */
 
-.stat-card {
+a.stat-card {
+
+    display: block;
 
     background: white;
 
-    padding: 30px;
+    padding: 25px;
 
     border-radius: 12px;
 
+    text-decoration: none;
+
+    color: inherit;
+
+    cursor: pointer;
+
     box-shadow: 0 4px 12px lightgray;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
 
 }
 
 
+/* =========================================
+   STAT CARD HOVER
+========================================= */
+
+.stat-card:hover {
+
+    text-decoration: none;
+
+    transform: translateY(-6px);
+
+    box-shadow: 0 10px 25px lightgray;
+
+}
+
+
+/* =========================================
+   STAT CARD ACTIVE
+========================================= */
+
+.stat-card:active {
+
+    transform: translateY(-2px);
+
+}
+
+
+/* =========================================
+   STAT CARD TITLE
+========================================= */
 
 .stat-card h3 {
 
@@ -373,6 +417,9 @@
 }
 
 
+/* =========================================
+   STAT CARD NUMBER
+========================================= */
 
 .stat-card h2 {
 
@@ -385,14 +432,17 @@
 }
 
 
+/* =========================================
+   STAT CARD DESCRIPTION
+========================================= */
 
 .stat-card p {
+
+    color: gray;
 
     margin-top: 5px;
 
 }
-
-
 
 /* =========================================
    QUICK ACTIONS
@@ -566,3 +616,15 @@
 
     transform: translate(20px, -15px);
 } */
+
+
+a.stat-card {
+    background: red !important;
+    color: yellow !important;
+    text-decoration: none !important;
+}
+
+a.stat-card:hover {
+    background: blue !important;
+    transform: translateY(-20px) !important;
+}
