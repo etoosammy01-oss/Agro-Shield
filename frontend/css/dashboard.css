@@ -617,14 +617,3 @@ a.stat-card {
     transform: translate(20px, -15px);
 } */
 
-
-a.stat-card {
-    background: red !important;
-    color: yellow !important;
-    text-decoration: none !important;
-}
-
-a.stat-card:hover {
-    background: blue !important;
-    transform: translateY(-20px) !important;
-}
