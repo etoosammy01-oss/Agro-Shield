@@ -114,10 +114,10 @@ func (r *FarmerRepository) GetByID(id int) (*models.Farmer, error) {
 func (r *FarmerRepository) UpdateProfile(id int, fullName, phone, email, location string) error {
 	query := `
 	UPDATE farmers
-	SET full_name = $1, phone = $2, email = $3 location = $4, updated_at = CURRENT_TIMESTAMP
+	SET full_name = $1, phone = $2, email = $3, location = $4, updated_at = CURRENT_TIMESTAMP
 	WHERE id = $5
 	`
-	_, err := r.db.Exec(query, fullName, phone, location, id)
+	_, err := r.db.Exec(query, fullName, phone, email, location, id)
 	return err
 }
 
