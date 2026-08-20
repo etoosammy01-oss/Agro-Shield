@@ -57,17 +57,46 @@ func RegisterRoutes(container *app.Container) {
 		middleware.OnlyPath("/storage", middleware.RequireAuth(container.FarmerRepo, storageHandler.StorageHandler)),
 	)
 
-	// Marketplace handles its own GET/POST switch (buyers place orders here).
+		// Marketplace handles its own GET/POST switch (buyers place orders here).
 	marketplaceHandler := handlers.NewMarketplaceHandler(container.Crop, container.Order)
 	http.HandleFunc(
 		"/marketplace",
 		middleware.OnlyPath("/marketplace", middleware.RequireAuth(container.FarmerRepo, marketplaceHandler.MarketplaceHandler)),
 	)
+
 	// Product Details: displays information about one marketplace product.
 	productHandler := handlers.NewProductHandler(container.Crop)
 	http.HandleFunc(
 		"/product",
 		middleware.OnlyPath("/product", middleware.RequireAuth(container.FarmerRepo, productHandler.ProductDetailsHandler)),
+	)
+
+	// ========================================================
+	// CART
+	// ========================================================
+	// The cart contains products whose negotiation offers
+	// have been accepted.
+	//
+	// Buyers can use this page to:
+	// - View the agreed product.
+	// - View quantity and negotiated price.
+	// - View total price.
+	// - View seller information.
+	// - View buyer information.
+	// - Remove an item from the cart.
+	// ========================================================
+
+	cartHandler := handlers.NewCartHandler(container.Cart)
+
+	http.HandleFunc(
+		"/cart",
+		middleware.OnlyPath(
+			"/cart",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				cartHandler.Handler,
+			),
+		),
 	)
 
 	// AI Assistant handles its own GET/POST switch (image upload).
@@ -80,16 +109,39 @@ func RegisterRoutes(container *app.Container) {
 	// Negotiations: list, thread (chat + offer/accept/reject), and starting
 	// a new one from the Marketplace page.
 	negotiationHandler := handlers.NewNegotiationHandler(container.Negotiation)
+
 	http.HandleFunc(
 		"/negotiations",
-		middleware.OnlyPath("/negotiations", middleware.OnlyGet(middleware.RequireAuth(container.FarmerRepo, negotiationHandler.ListHandler))),
+		middleware.OnlyPath(
+			"/negotiations",
+			middleware.OnlyGet(
+				middleware.RequireAuth(
+					container.FarmerRepo,
+					negotiationHandler.ListHandler,
+				),
+			),
+		),
 	)
+
 	http.HandleFunc(
 		"/negotiation",
-		middleware.OnlyPath("/negotiation", middleware.RequireAuth(container.FarmerRepo, negotiationHandler.ThreadHandler)),
+		middleware.OnlyPath(
+			"/negotiation",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				negotiationHandler.ThreadHandler,
+			),
+		),
 	)
+
 	http.HandleFunc(
 		"/negotiation/start",
-		middleware.OnlyPath("/negotiation/start", middleware.RequireAuth(container.FarmerRepo, negotiationHandler.StartHandler)),
+		middleware.OnlyPath(
+			"/negotiation/start",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				negotiationHandler.StartHandler,
+			),
+		),
 	)
 }
