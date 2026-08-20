@@ -388,7 +388,7 @@ a.stat-card {
 
     transform: translateY(-6px);
 
-    box-shadow: 0 10px 25px lightgray;
+    box-shadow: 0 10px 25px rgb(202, 169, 115);
 
 }
 
