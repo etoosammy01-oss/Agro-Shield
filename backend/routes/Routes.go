@@ -57,7 +57,7 @@ func RegisterRoutes(container *app.Container) {
 		middleware.OnlyPath("/storage", middleware.RequireAuth(container.FarmerRepo, storageHandler.StorageHandler)),
 	)
 
-		// Marketplace handles its own GET/POST switch (buyers place orders here).
+	// Marketplace handles its own GET/POST switch (buyers place orders here).
 	marketplaceHandler := handlers.NewMarketplaceHandler(container.Crop, container.Order)
 	http.HandleFunc(
 		"/marketplace",
@@ -98,7 +98,75 @@ func RegisterRoutes(container *app.Container) {
 			),
 		),
 	)
+	// ========================================================
+	// NOTIFICATIONS
+	// ========================================================
+	//
+	// Notifications allow logged-in farmers/buyers to:
+	//
+	// - View their notifications.
+	// - See unread notification count.
+	// - Mark one notification as read.
+	// - Mark all notifications as read.
+	//
+	// The notification handler is protected by RequireAuth so
+	// users can only access their own notifications.
+	// ========================================================
 
+	notificationHandler := handlers.NewNotificationHandler(
+		container.Notification,
+	)
+
+	// --------------------------------------------------------
+	// View notifications
+	//
+	// GET /notifications
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/notifications",
+		middleware.OnlyPath(
+			"/notifications",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				notificationHandler.NotificationsHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// Mark one notification as read
+	//
+	// POST /notifications/read?id=123
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/notifications/read",
+		middleware.OnlyPath(
+			"/notifications/read",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				notificationHandler.MarkAsReadHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// Mark all notifications as read
+	//
+	// POST /notifications/read-all
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/notifications/read-all",
+		middleware.OnlyPath(
+			"/notifications/read-all",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				notificationHandler.MarkAllAsReadHandler,
+			),
+		),
+	)
 	// AI Assistant handles its own GET/POST switch (image upload).
 	aiHandler := handlers.NewAIAssistantHandler(container.AI)
 	http.HandleFunc(

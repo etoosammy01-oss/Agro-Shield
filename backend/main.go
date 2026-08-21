@@ -62,7 +62,8 @@ func main() {
 	// Cart repository
 	// This was the missing repository causing your current error.
 	cartRepo := repository.NewCartRepository(db)
-
+	// Notification repository
+	notificationRepo := repository.NewNotificationRepository(db)
 	// ============================================================
 	// 4. CREATE AI PROVIDER
 	//
@@ -89,15 +90,16 @@ func main() {
 	// ============================================================
 
 	container := app.NewContainer(
-		farmerRepo,
-		cropRepo,
-		orderRepo,
-		cartRepo,
-		diagnosisRepo,
-		negotiationRepo,
-		negotiationMsgRepo,
-		aiProvider,
-	)
+	farmerRepo,
+	cropRepo,
+	orderRepo,
+	cartRepo,
+	diagnosisRepo,
+	negotiationRepo,
+	negotiationMsgRepo,
+	notificationRepo,
+	aiProvider,
+)
 
 	// ============================================================
 	// 6. REGISTER ROUTES

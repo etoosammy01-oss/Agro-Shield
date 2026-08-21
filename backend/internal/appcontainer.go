@@ -16,12 +16,13 @@ import (
 // ============================================================
 
 type Container struct {
-	Auth        *services.AuthService
-	Crop        *services.CropService
-	Order       *services.OrderService
-	Cart        *services.CartService
-	AI          *services.AIService
-	Negotiation *services.NegotiationService
+	Auth         *services.AuthService
+	Crop         *services.CropService
+	Order        *services.OrderService
+	Cart         *services.CartService
+	AI           *services.AIService
+	Negotiation  *services.NegotiationService
+	Notification *services.NotificationService
 
 	// Exposed so route-level authentication middleware can
 	// look up the currently logged-in farmer/buyer.
@@ -67,6 +68,7 @@ func NewContainer(
 	diagnosisRepo *repository.DiagnosisRepository,
 	negotiationRepo *repository.NegotiationRepository,
 	negotiationMsgRepo *repository.NegotiationMessageRepository,
+	notificationRepo *repository.NotificationRepository,
 	aiProvider services.AIProvider,
 ) *Container {
 
@@ -122,7 +124,34 @@ func NewContainer(
 	)
 
 	// ========================================================
-	// 3. RETURN APPLICATION CONTAINER
+	// 3. NOTIFICATION SERVICE
+	//
+	// NotificationService handles notification business logic.
+	//
+	// It needs:
+	//
+	// - NotificationRepository
+	//   Handles saving and retrieving notifications from
+	//   PostgreSQL.
+	//
+	// The service sits between the application and the
+	// repository.
+	//
+	// Application
+	//      ↓
+	// NotificationService
+	//      ↓
+	// NotificationRepository
+	//      ↓
+	// PostgreSQL
+	// ========================================================
+
+	notificationService := services.NewNotificationService(
+		notificationRepo,
+	)
+
+	// ========================================================
+	// 4. RETURN APPLICATION CONTAINER
 	//
 	// All major Agro-Shield services are now connected.
 	// ========================================================
@@ -188,6 +217,14 @@ func NewContainer(
 		// ====================================================
 
 		Negotiation: negotiationService,
+
+		// ====================================================
+		// NOTIFICATION SERVICE
+		//
+		// Handles creating and managing notifications.
+		// ====================================================
+
+		Notification: notificationService,
 
 		// ====================================================
 		// FARMER REPOSITORY
