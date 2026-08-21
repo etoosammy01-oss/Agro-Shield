@@ -93,38 +93,7 @@ func NewContainer(
 	)
 
 	// ========================================================
-	// 2. NEGOTIATION SERVICE
-	//
-	// NegotiationService handles:
-	//
-	// - Starting negotiations.
-	// - Sending offers.
-	// - Sending counter-offers.
-	// - Accepting individual offers.
-	// - Rejecting individual offers.
-	// - Keeping rejected negotiations open.
-	// - Moving accepted deals into the buyer's cart.
-	//
-	// It needs:
-	//
-	// - NegotiationRepository
-	// - NegotiationMessageRepository
-	// - CropRepository
-	// - CartService
-	//
-	// CartService is passed here because an accepted offer
-	// eventually becomes a cart item.
-	// ========================================================
-
-	negotiationService := services.NewNegotiationService(
-		negotiationRepo,
-		negotiationMsgRepo,
-		cropRepo,
-		cartService,
-	)
-
-	// ========================================================
-	// 3. NOTIFICATION SERVICE
+	// 2. NOTIFICATION SERVICE
 	//
 	// NotificationService handles notification business logic.
 	//
@@ -148,6 +117,40 @@ func NewContainer(
 
 	notificationService := services.NewNotificationService(
 		notificationRepo,
+	)
+
+	// ========================================================
+	// 3. NEGOTIATION SERVICE
+	//
+	// NegotiationService handles:
+	//
+	// - Starting negotiations.
+	// - Sending offers.
+	// - Sending counter-offers.
+	// - Accepting individual offers.
+	// - Rejecting individual offers.
+	// - Keeping rejected negotiations open.
+	// - Moving accepted deals into the buyer's cart.
+	// - Sending notifications related to negotiations.
+	//
+	// It needs:
+	//
+	// - NegotiationRepository
+	// - NegotiationMessageRepository
+	// - CropRepository
+	// - CartService
+	// - NotificationService
+	//
+	// NotificationService must be created BEFORE
+	// NegotiationService because NegotiationService depends on it.
+	// ========================================================
+
+	negotiationService := services.NewNegotiationService(
+		negotiationRepo,
+		negotiationMsgRepo,
+		cropRepo,
+		cartService,
+		notificationService,
 	)
 
 	// ========================================================

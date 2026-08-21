@@ -8,15 +8,25 @@ import (
 // ============================================================
 // NEGOTIATION MESSAGE REPOSITORY
 //
-// This repository is responsible for all database operations
-// related to messages and offers inside a negotiation.
+// Responsibility:
+// - Communicates directly with negotiation_messages table.
+// - Stores normal chat messages.
+// - Stores price offers.
+// - Retrieves the complete conversation.
+// - Retrieves individual messages/offers.
+// - Updates the status of individual offers.
 //
 // IMPORTANT:
-// A negotiation is the conversation.
-// A negotiation message is an individual message/offer.
 //
-// Therefore, accepting or rejecting an offer changes the
-// individual message status, NOT the entire conversation.
+// A negotiation is the conversation.
+//
+// A negotiation message can be:
+//
+//   💬 normal chat
+//   💰 price offer
+//
+// Accepting/rejecting an offer changes ONLY that offer.
+// It does not delete or close the conversation history.
 // ============================================================
 
 type NegotiationMessageRepository struct {
@@ -24,25 +34,39 @@ type NegotiationMessageRepository struct {
 }
 
 // ============================================================
-// 1. CREATE NEGOTIATION MESSAGE
-//
-// Creates a new message/offer inside a negotiation.
-//
-// Responsibility:
-// - Store who sent the offer.
-// - Store the negotiation it belongs to.
-// - Store the offered price.
-// - Store the message.
-// - Store whether the offer is pending, accepted, or rejected.
+// CREATE REPOSITORY
 // ============================================================
 
-func NewNegotiationMessageRepository(db *sql.DB) *NegotiationMessageRepository {
+func NewNegotiationMessageRepository(
+	db *sql.DB,
+) *NegotiationMessageRepository {
+
 	return &NegotiationMessageRepository{
 		db: db,
 	}
 }
 
-// Create stores a new negotiation message/offer.
+// ============================================================
+// CREATE MESSAGE
+//
+// Stores either:
+//
+//   1. Normal chat message
+//   2. Price offer
+//
+// Example chat:
+//
+// MessageType = "chat"
+// OfferPrice = 0
+// OfferStatus = "none"
+//
+// Example offer:
+//
+// MessageType = "offer"
+// OfferPrice = 50000
+// OfferStatus = "pending"
+// ============================================================
+
 func (r *NegotiationMessageRepository) Create(
 	m *models.NegotiationMessage,
 ) error {
@@ -51,11 +75,12 @@ func (r *NegotiationMessageRepository) Create(
 		INSERT INTO negotiation_messages (
 			negotiation_id,
 			sender_id,
+			message_type,
 			offer_price,
 			message,
 			offer_status
 		)
-		VALUES ($1, $2, $3, $4, $5)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at
 	`
 
@@ -63,6 +88,7 @@ func (r *NegotiationMessageRepository) Create(
 		query,
 		m.NegotiationID,
 		m.SenderID,
+		m.MessageType,
 		m.OfferPrice,
 		m.Message,
 		m.OfferStatus,
@@ -75,20 +101,18 @@ func (r *NegotiationMessageRepository) Create(
 }
 
 // ============================================================
-// 2. LIST NEGOTIATION MESSAGES
+// LIST NEGOTIATION MESSAGES
 //
-// Returns every message/offer belonging to a negotiation.
+// Returns the COMPLETE conversation.
 //
-// Responsibility:
-// - Load the complete negotiation conversation.
-// - Include pending offers.
-// - Include rejected offers.
-// - Include accepted offers.
-// - Keep the original order of the conversation.
+// Includes:
 //
-// IMPORTANT:
-// We do NOT filter out rejected or accepted offers because the
-// chat history should remain visible to both parties.
+// 💬 chat messages
+// 💰 pending offers
+// ❌ rejected offers
+// ✅ accepted offers
+//
+// Nothing is removed from the conversation history.
 // ============================================================
 
 func (r *NegotiationMessageRepository) ListByNegotiation(
@@ -100,13 +124,14 @@ func (r *NegotiationMessageRepository) ListByNegotiation(
 			id,
 			negotiation_id,
 			sender_id,
+			message_type,
 			offer_price,
 			message,
 			offer_status,
 			created_at
 		FROM negotiation_messages
 		WHERE negotiation_id = $1
-		ORDER BY created_at ASC
+		ORDER BY created_at ASC, id ASC
 	`
 
 	rows, err := r.db.Query(
@@ -130,6 +155,7 @@ func (r *NegotiationMessageRepository) ListByNegotiation(
 			&m.ID,
 			&m.NegotiationID,
 			&m.SenderID,
+			&m.MessageType,
 			&m.OfferPrice,
 			&m.Message,
 			&m.OfferStatus,
@@ -143,24 +169,29 @@ func (r *NegotiationMessageRepository) ListByNegotiation(
 		messages = append(messages, m)
 	}
 
-	return messages, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 }
 
 // ============================================================
-// 3. GET NEGOTIATION MESSAGE BY ID
+// GET MESSAGE BY ID
 //
-// Retrieves one specific offer/message.
+// Retrieves one specific message.
 //
-// Responsibility:
-// - Find a particular offer.
-// - Return all information about that offer.
-// - Allow the service layer to check its status.
-// - Allow Accept() and Reject() to operate on one specific
-//   offer instead of closing the entire negotiation.
+// This can be:
+//
+// 💬 chat
+// 💰 offer
+//
+// The service layer decides whether the message can be
+// accepted or rejected.
 // ============================================================
 
 func (r *NegotiationMessageRepository) GetByID(
-	offerID int,
+	messageID int,
 ) (*models.NegotiationMessage, error) {
 
 	query := `
@@ -168,6 +199,7 @@ func (r *NegotiationMessageRepository) GetByID(
 			id,
 			negotiation_id,
 			sender_id,
+			message_type,
 			offer_price,
 			message,
 			offer_status,
@@ -180,18 +212,18 @@ func (r *NegotiationMessageRepository) GetByID(
 
 	err := r.db.QueryRow(
 		query,
-		offerID,
+		messageID,
 	).Scan(
 		&m.ID,
 		&m.NegotiationID,
 		&m.SenderID,
+		&m.MessageType,
 		&m.OfferPrice,
 		&m.Message,
 		&m.OfferStatus,
 		&m.CreatedAt,
 	)
 
-	// sql.ErrNoRows means the requested offer does not exist.
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -204,34 +236,23 @@ func (r *NegotiationMessageRepository) GetByID(
 }
 
 // ============================================================
-// 4. UPDATE OFFER STATUS
+// UPDATE OFFER STATUS
 //
-// Changes the status of ONE individual offer.
+// Changes the status of ONE offer.
+//
+// This function should only be used for messages where:
+//
+// MessageType == "offer"
 //
 // Possible statuses:
 //
-//   pending  → offer is waiting for a response
-//   accepted → this particular offer was accepted
-//   rejected → this particular offer was rejected
+// pending
+// accepted
+// rejected
 //
 // IMPORTANT:
 //
-// This function DOES NOT change the negotiation status.
-//
-// Example:
-//
-// Buyer offers ₦50,000
-//        ↓
-// Seller rejects ₦50,000
-//        ↓
-// This offer becomes "rejected"
-//        ↓
-// Negotiation remains "open"
-//        ↓
-// Buyer can send another offer
-//
-// The negotiation only becomes "accepted" when the service
-// layer decides that the deal has been finalized.
+// This does NOT change the negotiation itself.
 // ============================================================
 
 func (r *NegotiationMessageRepository) UpdateOfferStatus(
@@ -243,6 +264,7 @@ func (r *NegotiationMessageRepository) UpdateOfferStatus(
 		UPDATE negotiation_messages
 		SET offer_status = $1
 		WHERE id = $2
+		AND message_type = 'offer'
 	`
 
 	result, err := r.db.Exec(
@@ -255,7 +277,6 @@ func (r *NegotiationMessageRepository) UpdateOfferStatus(
 		return err
 	}
 
-	// Make sure the offer actually existed.
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err

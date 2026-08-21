@@ -2,26 +2,43 @@ package models
 
 import "time"
 
-// NegotiationMessage represents one message or price offer
-// inside a negotiation conversation.
+// ============================================================
+// NEGOTIATION MESSAGE MODEL
+//
+// Responsibility:
+// - Represents one message inside a negotiation.
+// - A message can be normal chat.
+// - A message can also contain a price offer.
+// - Keeps track of the type of message.
+// - Keeps track of offer status when the message is an offer.
+//
+// Message types:
+//
+//   "chat"  → normal conversation message
+//   "offer" → message containing a price offer
+//
+// Offer statuses:
+//
+//   "pending"  → offer is waiting for a response
+//   "accepted" → offer was accepted
+//   "rejected" → offer was rejected
+//   "none"     → normal chat message has no offer status
+//
+// This model is used by:
+//
+// Repository → Service → Handler → Frontend
+// ============================================================
+
 type NegotiationMessage struct {
-	ID            int
-	NegotiationID int
-	SenderID      int
+	ID            int       `json:"id"`
+	NegotiationID int       `json:"negotiation_id"`
+	SenderID      int       `json:"sender_id"`
 
-	// OfferPrice is the price proposed by the sender.
-	OfferPrice float64
+	MessageType string `json:"message_type"`
 
-	// Message contains the sender's explanation or chat message.
-	Message string
+	OfferPrice float64 `json:"offer_price"`
+	Message    string  `json:"message"`
+	OfferStatus string  `json:"offer_status"`
 
-	// OfferStatus describes what happened to this particular offer.
-	//
-	// Possible values:
-	// - "pending"  → waiting for the other party
-	// - "accepted" → this offer was accepted
-	// - "rejected" → this offer was rejected
-	OfferStatus string
-
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
 }
