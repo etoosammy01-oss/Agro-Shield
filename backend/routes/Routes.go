@@ -8,85 +8,208 @@ import (
 )
 
 func RegisterRoutes(container *app.Container) {
+
+	// ========================================================
+	// STATIC FILES
+	// ========================================================
+
 	http.Handle(
-		"/static/", http.StripPrefix("/static/",
+		"/static/",
+		http.StripPrefix(
+			"/static/",
 			http.FileServer(http.Dir("../frontend")),
 		),
 	)
 
-	http.HandleFunc("/", middleware.OnlyPath("/", middleware.OnlyGet(handlers.IndexHandler)))
+	// ========================================================
+	// HOME
+	// ========================================================
 
-	registerHandler := handlers.NewRegisterHandler(container.Auth)
-	http.HandleFunc("/register", middleware.OnlyPath("/register", registerHandler.RegisterHandler))
+	http.HandleFunc(
+		"/",
+		middleware.OnlyPath(
+			"/",
+			middleware.OnlyGet(
+				handlers.IndexHandler,
+			),
+		),
+	)
 
-	// Login handles its own GET/POST switch internally, so it isn't
-	// wrapped in OnlyGet (that was blocking POST from ever reaching it).
-	loginHandler := handlers.NewLoginHandler(container.Auth)
-	http.HandleFunc("/login", middleware.OnlyPath("/login", loginHandler.LoginHandler))
+	// ========================================================
+	// AUTHENTICATION
+	// ========================================================
 
-	http.HandleFunc("/logout", middleware.OnlyPath("/logout", middleware.OnlyGet(handlers.LogoutHandler)))
+	registerHandler := handlers.NewRegisterHandler(
+		container.Auth,
+	)
 
-	forgotPasswordHandler := handlers.NewForgotPasswordHandler(container.Auth)
-	http.HandleFunc("/forgot-password", middleware.OnlyPath("/forgot-password", forgotPasswordHandler.Handler))
+	http.HandleFunc(
+		"/register",
+		middleware.OnlyPath(
+			"/register",
+			registerHandler.RegisterHandler,
+		),
+	)
 
-	// Everything below is protected: RequireAuth loads the logged-in
-	// farmer/buyer and attaches it to the request before the handler runs.
+	loginHandler := handlers.NewLoginHandler(
+		container.Auth,
+	)
 
-	dashboardHandler := handlers.NewDashboardHandler(container.Crop, container.Order, container.AI)
+	http.HandleFunc(
+		"/login",
+		middleware.OnlyPath(
+			"/login",
+			loginHandler.LoginHandler,
+		),
+	)
+
+	http.HandleFunc(
+		"/logout",
+		middleware.OnlyPath(
+			"/logout",
+			middleware.OnlyGet(
+				handlers.LogoutHandler,
+			),
+		),
+	)
+
+	forgotPasswordHandler := handlers.NewForgotPasswordHandler(
+		container.Auth,
+	)
+
+	http.HandleFunc(
+		"/forgot-password",
+		middleware.OnlyPath(
+			"/forgot-password",
+			forgotPasswordHandler.Handler,
+		),
+	)
+
+	// ========================================================
+	// DASHBOARD
+	// ========================================================
+
+	dashboardHandler := handlers.NewDashboardHandler(
+		container.Crop,
+		container.Order,
+		container.AI,
+	)
+
 	http.HandleFunc(
 		"/dashboard",
-		middleware.OnlyPath("/dashboard", middleware.OnlyGet(middleware.RequireAuth(container.FarmerRepo, dashboardHandler.DashBoard))),
+		middleware.OnlyPath(
+			"/dashboard",
+			middleware.OnlyGet(
+				middleware.RequireAuth(
+					container.FarmerRepo,
+					dashboardHandler.DashBoard,
+				),
+			),
+		),
 	)
 
-	profileHandler := handlers.NewProfileHandler(container.Crop, container.Order)
+	// ========================================================
+	// PROFILE
+	// ========================================================
+
+	profileHandler := handlers.NewProfileHandler(
+		container.Crop,
+		container.Order,
+	)
+
 	http.HandleFunc(
 		"/profile",
-		middleware.OnlyPath("/profile", middleware.OnlyGet(middleware.RequireAuth(container.FarmerRepo, profileHandler.ProfileHandler))),
+		middleware.OnlyPath(
+			"/profile",
+			middleware.OnlyGet(
+				middleware.RequireAuth(
+					container.FarmerRepo,
+					profileHandler.ProfileHandler,
+				),
+			),
+		),
 	)
 
-	profileEditHandler := handlers.NewProfileEditHandler(container.Auth)
+	profileEditHandler := handlers.NewProfileEditHandler(
+		container.Auth,
+	)
+
 	http.HandleFunc(
 		"/profile/edit",
-		middleware.OnlyPath("/profile/edit", middleware.RequireAuth(container.FarmerRepo, profileEditHandler.Handler)),
+		middleware.OnlyPath(
+			"/profile/edit",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				profileEditHandler.Handler,
+			),
+		),
 	)
 
-	// Storage handles its own GET/POST switch (farmers register crops here).
-	storageHandler := handlers.NewStorageHandler(container.Crop)
+	// ========================================================
+	// STORAGE
+	// ========================================================
+
+	storageHandler := handlers.NewStorageHandler(
+		container.Crop,
+	)
+
 	http.HandleFunc(
 		"/storage",
-		middleware.OnlyPath("/storage", middleware.RequireAuth(container.FarmerRepo, storageHandler.StorageHandler)),
+		middleware.OnlyPath(
+			"/storage",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				storageHandler.StorageHandler,
+			),
+		),
 	)
 
-	// Marketplace handles its own GET/POST switch (buyers place orders here).
-	marketplaceHandler := handlers.NewMarketplaceHandler(container.Crop, container.Order)
+	// ========================================================
+	// MARKETPLACE
+	// ========================================================
+
+	marketplaceHandler := handlers.NewMarketplaceHandler(
+		container.Crop,
+		container.Order,
+	)
+
 	http.HandleFunc(
 		"/marketplace",
-		middleware.OnlyPath("/marketplace", middleware.RequireAuth(container.FarmerRepo, marketplaceHandler.MarketplaceHandler)),
+		middleware.OnlyPath(
+			"/marketplace",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				marketplaceHandler.MarketplaceHandler,
+			),
+		),
 	)
 
-	// Product Details: displays information about one marketplace product.
-	productHandler := handlers.NewProductHandler(container.Crop)
+	// ========================================================
+	// PRODUCT DETAILS
+	// ========================================================
+
+	productHandler := handlers.NewProductHandler(
+		container.Crop,
+	)
+
 	http.HandleFunc(
 		"/product",
-		middleware.OnlyPath("/product", middleware.RequireAuth(container.FarmerRepo, productHandler.ProductDetailsHandler)),
+		middleware.OnlyPath(
+			"/product",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				productHandler.ProductDetailsHandler,
+			),
+		),
 	)
 
 	// ========================================================
 	// CART
 	// ========================================================
-	// The cart contains products whose negotiation offers
-	// have been accepted.
-	//
-	// Buyers can use this page to:
-	// - View the agreed product.
-	// - View quantity and negotiated price.
-	// - View total price.
-	// - View seller information.
-	// - View buyer information.
-	// - Remove an item from the cart.
-	// ========================================================
 
-	cartHandler := handlers.NewCartHandler(container.Cart)
+	cartHandler := handlers.NewCartHandler(
+		container.Cart,
+	)
 
 	http.HandleFunc(
 		"/cart",
@@ -98,30 +221,18 @@ func RegisterRoutes(container *app.Container) {
 			),
 		),
 	)
+
 	// ========================================================
 	// NOTIFICATIONS
-	// ========================================================
-	//
-	// Notifications allow logged-in farmers/buyers to:
-	//
-	// - View their notifications.
-	// - See unread notification count.
-	// - Mark one notification as read.
-	// - Mark all notifications as read.
-	//
-	// The notification handler is protected by RequireAuth so
-	// users can only access their own notifications.
 	// ========================================================
 
 	notificationHandler := handlers.NewNotificationHandler(
 		container.Notification,
 	)
 
-	// --------------------------------------------------------
 	// View notifications
 	//
 	// GET /notifications
-	// --------------------------------------------------------
 
 	http.HandleFunc(
 		"/notifications",
@@ -134,11 +245,9 @@ func RegisterRoutes(container *app.Container) {
 		),
 	)
 
-	// --------------------------------------------------------
 	// Mark one notification as read
 	//
 	// POST /notifications/read?id=123
-	// --------------------------------------------------------
 
 	http.HandleFunc(
 		"/notifications/read",
@@ -151,11 +260,9 @@ func RegisterRoutes(container *app.Container) {
 		),
 	)
 
-	// --------------------------------------------------------
 	// Mark all notifications as read
 	//
 	// POST /notifications/read-all
-	// --------------------------------------------------------
 
 	http.HandleFunc(
 		"/notifications/read-all",
@@ -167,16 +274,37 @@ func RegisterRoutes(container *app.Container) {
 			),
 		),
 	)
-	// AI Assistant handles its own GET/POST switch (image upload).
-	aiHandler := handlers.NewAIAssistantHandler(container.AI)
-	http.HandleFunc(
-		"/ai-assistant",
-		middleware.OnlyPath("/ai-assistant", middleware.RequireAuth(container.FarmerRepo, aiHandler.Handler)),
+
+	// ========================================================
+	// AI ASSISTANT
+	// ========================================================
+
+	aiHandler := handlers.NewAIAssistantHandler(
+		container.AI,
 	)
 
-	// Negotiations: list, thread (chat + offer/accept/reject), and starting
-	// a new one from the Marketplace page.
-	negotiationHandler := handlers.NewNegotiationHandler(container.Negotiation)
+	http.HandleFunc(
+		"/ai-assistant",
+		middleware.OnlyPath(
+			"/ai-assistant",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				aiHandler.Handler,
+			),
+		),
+	)
+
+	// ========================================================
+	// NEGOTIATIONS
+	// ========================================================
+
+	negotiationHandler := handlers.NewNegotiationHandler(
+		container.Negotiation,
+	)
+
+	// Negotiation list
+	//
+	// GET /negotiations
 
 	http.HandleFunc(
 		"/negotiations",
@@ -191,6 +319,12 @@ func RegisterRoutes(container *app.Container) {
 		),
 	)
 
+	// Negotiation conversation
+	//
+	// GET /negotiation?id=123
+	//
+	// The handler also handles POST actions.
+
 	http.HandleFunc(
 		"/negotiation",
 		middleware.OnlyPath(
@@ -202,6 +336,10 @@ func RegisterRoutes(container *app.Container) {
 		),
 	)
 
+	// Start negotiation
+	//
+	// POST /negotiation/start
+
 	http.HandleFunc(
 		"/negotiation/start",
 		middleware.OnlyPath(
@@ -209,6 +347,214 @@ func RegisterRoutes(container *app.Container) {
 			middleware.RequireAuth(
 				container.FarmerRepo,
 				negotiationHandler.StartHandler,
+			),
+		),
+	)
+
+	// ========================================================
+	// CHAT
+	// ========================================================
+	//
+	// General Agro-Shield communication.
+	//
+	// Chat is different from negotiation.
+	//
+	// Negotiation:
+	//
+	// Buyer ↔ Seller
+	// Price negotiation
+	// Offers
+	// Accept / Reject
+	//
+	// Chat:
+	//
+	// User ↔ User
+	// User ↔ Group
+	// Normal communication
+	//
+	// Examples:
+	//
+	// 🌽 Maize Farmers Association
+	// 🛠️ Farm Tools Sellers
+	// 👨🏽‍🌾 Benue Farmers
+	// 👤 Private conversation with another user
+	//
+	// ========================================================
+
+	chatHandler := handlers.NewChatHandler(
+		container.Chat,
+	)
+
+	// --------------------------------------------------------
+	// CHAT HOME
+	//
+	// GET /chat
+	//
+	// Shows all conversations belonging to the user.
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat",
+		middleware.OnlyPath(
+			"/chat",
+			middleware.OnlyGet(
+				middleware.RequireAuth(
+					container.FarmerRepo,
+					chatHandler.ListHandler,
+				),
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// VIEW CHAT
+	//
+	// GET /chat/view?id=123
+	//
+	// Displays:
+	//
+	// - Conversation
+	// - Messages
+	// - Members
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/view",
+		middleware.OnlyPath(
+			"/chat/view",
+			middleware.OnlyGet(
+				middleware.RequireAuth(
+					container.FarmerRepo,
+					chatHandler.ViewHandler,
+				),
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// SEND MESSAGE
+	//
+	// POST /chat/send
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/send",
+		middleware.OnlyPath(
+			"/chat/send",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.SendMessageHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// CREATE GROUP
+	//
+	// POST /chat/group/create
+	//
+	// Example:
+	//
+	// Maize Farmers Association
+	//
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/group/create",
+		middleware.OnlyPath(
+			"/chat/group/create",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.CreateGroupHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// CREATE PRIVATE CHAT
+	//
+	// POST /chat/private
+	//
+	// Form:
+	//
+	// user_id
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/private",
+		middleware.OnlyPath(
+			"/chat/private",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.CreatePrivateChatHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// ADD MEMBER
+	//
+	// POST /chat/member/add
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/member/add",
+		middleware.OnlyPath(
+			"/chat/member/add",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.AddMemberHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// REMOVE MEMBER
+	//
+	// POST /chat/member/remove
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/member/remove",
+		middleware.OnlyPath(
+			"/chat/member/remove",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.RemoveMemberHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// LEAVE GROUP
+	//
+	// POST /chat/leave
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/leave",
+		middleware.OnlyPath(
+			"/chat/leave",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.LeaveGroupHandler,
+			),
+		),
+	)
+
+	// --------------------------------------------------------
+	// DELETE MESSAGE
+	//
+	// POST /chat/message/delete
+	// --------------------------------------------------------
+
+	http.HandleFunc(
+		"/chat/message/delete",
+		middleware.OnlyPath(
+			"/chat/message/delete",
+			middleware.RequireAuth(
+				container.FarmerRepo,
+				chatHandler.DeleteMessageHandler,
 			),
 		),
 	)

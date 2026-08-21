@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Agro-Shield Chat</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/chat.css"
+    >
+</head>
+
+<body>
+
+    <!-- =====================================================
+         CHAT PAGE
+         ===================================================== -->
+
+    <div class="chat-container">
+
+        <!-- =================================================
+             HEADER
+             ================================================= -->
+
+        <header class="chat-header">
+
+            <div>
+                <h1>Agro-Shield Chat</h1>
+
+                <p>
+                    Connect with farmers, buyers, sellers,
+                    and agricultural groups.
+                </p>
+            </div>
+
+            <a
+                href="/dashboard"
+                class="back-button"
+            >
+                Dashboard
+            </a>
+
+        </header>
+
+
+        <!-- =================================================
+             ERROR MESSAGE
+             ================================================= -->
+
+        {{if .Error}}
+
+        <div class="error-message">
+            {{.Error}}
+        </div>
+
+        {{end}}
+
+
+        <!-- =================================================
+             CREATE GROUP
+             ================================================= -->
+
+        <section class="create-group">
+
+            <h2>Create a Group</h2>
+
+            <p>
+                Create a community for farmers, sellers,
+                associations, or agricultural discussions.
+            </p>
+
+            <form
+                action="/chat/group/create"
+                method="POST"
+            >
+
+                <input
+                    type="text"
+                    name="name"
+                    placeholder="Example: Maize Farmers Association"
+                    maxlength="100"
+                    required
+                >
+
+                <button type="submit">
+                    Create Group
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- =================================================
+             MY CONVERSATIONS
+             ================================================= -->
+
+        <section class="conversations">
+
+            <div class="section-title">
+
+                <h2>My Chats</h2>
+
+                <span>
+                    {{len .Conversations}}
+                </span>
+
+            </div>
+
+
+            {{if .Conversations}}
+
+                <div class="conversation-list">
+
+                    {{range .Conversations}}
+
+                        <a
+                            href="/chat/view?id={{.ID}}"
+                            class="conversation-card"
+                        >
+
+                            <div class="conversation-icon">
+
+                                {{if eq .Type "group"}}
+                                    👥
+                                {{else}}
+                                    👤
+                                {{end}}
+
+                            </div>
+
+
+                            <div class="conversation-info">
+
+                                <h3>
+
+                                    {{if .Name}}
+
+                                        {{.Name}}
+
+                                    {{else}}
+
+                                        Private Chat
+
+                                    {{end}}
+
+                                </h3>
+
+                                <p>
+
+                                    {{if eq .Type "group"}}
+
+                                        Group conversation
+
+                                    {{else}}
+
+                                        Private conversation
+
+                                    {{end}}
+
+                                </p>
+
+                            </div>
+
+
+                            <div class="conversation-arrow">
+                                →
+                            </div>
+
+                        </a>
+
+                    {{end}}
+
+                </div>
+
+            {{else}}
+
+                <!-- =========================================
+                     NO CONVERSATIONS
+                     ========================================= -->
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        💬
+                    </div>
+
+                    <h3>
+                        No conversations yet
+                    </h3>
+
+                    <p>
+                        Create a group or start a private
+                        conversation to begin chatting.
+                    </p>
+
+                </div>
+
+            {{end}}
+
+        </section>
+
+    </div>
+
+</body>
+</html>

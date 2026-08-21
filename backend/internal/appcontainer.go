@@ -10,9 +10,17 @@ import (
 //
 // Container holds the main services used throughout Agro-Shield.
 //
-// Instead of creating services separately inside every route,
-// we create them once here and make them available through the
-// application container.
+// Dependency flow:
+//
+// Repository
+//     ↓
+// Service
+//     ↓
+// Container
+//     ↓
+// Handler
+//     ↓
+// Route
 // ============================================================
 
 type Container struct {
@@ -23,41 +31,14 @@ type Container struct {
 	AI           *services.AIService
 	Negotiation  *services.NegotiationService
 	Notification *services.NotificationService
+	Chat         *services.ChatService
 
-	// Exposed so route-level authentication middleware can
-	// look up the currently logged-in farmer/buyer.
+	// Used by authentication middleware.
 	FarmerRepo *repository.FarmerRepository
 }
 
 // ============================================================
 // CREATE APPLICATION CONTAINER
-//
-// This function receives all repositories and providers needed
-// by Agro-Shield and uses them to create the application's
-// services.
-//
-// Dependency flow:
-//
-// Repository
-//     ↓
-// Service
-//     ↓
-// Container
-//     ↓
-// Handlers / Routes
-//
-// Example:
-//
-// CartRepository
-//      ↓
-// CartService
-//      ↓
-// NegotiationService
-//      ↓
-// NegotiationHandler
-//
-// This allows an accepted negotiation to be moved into the
-// buyer's cart.
 // ============================================================
 
 func NewContainer(
@@ -69,22 +50,20 @@ func NewContainer(
 	negotiationRepo *repository.NegotiationRepository,
 	negotiationMsgRepo *repository.NegotiationMessageRepository,
 	notificationRepo *repository.NotificationRepository,
+
+	// ========================================================
+	// CHAT REPOSITORIES
+	// ========================================================
+
+	conversationRepo *repository.ConversationRepository,
+	memberRepo *repository.ConversationMemberRepository,
+	chatMessageRepo *repository.ChatMessageRepository,
+
 	aiProvider services.AIProvider,
 ) *Container {
 
 	// ========================================================
 	// 1. CART SERVICE
-	//
-	// CartService handles all business logic related to the
-	// buyer's shopping cart.
-	//
-	// It needs:
-	//
-	// - CartRepository
-	//   Handles cart database operations.
-	//
-	// - CropRepository
-	//   Checks the crop/product involved in the cart.
 	// ========================================================
 
 	cartService := services.NewCartService(
@@ -94,25 +73,6 @@ func NewContainer(
 
 	// ========================================================
 	// 2. NOTIFICATION SERVICE
-	//
-	// NotificationService handles notification business logic.
-	//
-	// It needs:
-	//
-	// - NotificationRepository
-	//   Handles saving and retrieving notifications from
-	//   PostgreSQL.
-	//
-	// The service sits between the application and the
-	// repository.
-	//
-	// Application
-	//      ↓
-	// NotificationService
-	//      ↓
-	// NotificationRepository
-	//      ↓
-	// PostgreSQL
 	// ========================================================
 
 	notificationService := services.NewNotificationService(
@@ -121,28 +81,6 @@ func NewContainer(
 
 	// ========================================================
 	// 3. NEGOTIATION SERVICE
-	//
-	// NegotiationService handles:
-	//
-	// - Starting negotiations.
-	// - Sending offers.
-	// - Sending counter-offers.
-	// - Accepting individual offers.
-	// - Rejecting individual offers.
-	// - Keeping rejected negotiations open.
-	// - Moving accepted deals into the buyer's cart.
-	// - Sending notifications related to negotiations.
-	//
-	// It needs:
-	//
-	// - NegotiationRepository
-	// - NegotiationMessageRepository
-	// - CropRepository
-	// - CartService
-	// - NotificationService
-	//
-	// NotificationService must be created BEFORE
-	// NegotiationService because NegotiationService depends on it.
 	// ========================================================
 
 	negotiationService := services.NewNegotiationService(
@@ -154,87 +92,101 @@ func NewContainer(
 	)
 
 	// ========================================================
-	// 4. RETURN APPLICATION CONTAINER
+	// 4. CHAT SERVICE
 	//
-	// All major Agro-Shield services are now connected.
+	// Chat is completely separate from negotiation.
+	//
+	// Negotiation:
+	//
+	// Buyer ↔ Seller
+	//     ↓
+	// Offers
+	//     ↓
+	// Accept/Reject
+	//
+	// Normal Chat:
+	//
+	// User ↔ User
+	// Group
+	//     ↓
+	// Unlimited normal conversation
+	//
+	// The negotiation expiration time does NOT affect ChatService.
+	// ========================================================
+
+	chatService := services.NewChatService(
+		conversationRepo,
+		memberRepo,
+		chatMessageRepo,
+	)
+
+	// ========================================================
+	// 5. RETURN APPLICATION CONTAINER
 	// ========================================================
 
 	return &Container{
 
-		// ====================================================
-		// AUTH SERVICE
-		//
-		// Handles farmer/buyer authentication and account
-		// related business logic.
-		// ====================================================
+		// ----------------------------------------------------
+		// AUTH
+		// ----------------------------------------------------
 
 		Auth: services.NewAuthService(
 			farmerRepo,
 		),
 
-		// ====================================================
-		// CROP SERVICE
-		//
-		// Handles crop/product operations.
-		// ====================================================
+		// ----------------------------------------------------
+		// CROPS
+		// ----------------------------------------------------
 
 		Crop: services.NewCropService(
 			cropRepo,
 		),
 
-		// ====================================================
-		// ORDER SERVICE
-		//
-		// Handles normal marketplace orders.
-		// ====================================================
+		// ----------------------------------------------------
+		// ORDERS
+		// ----------------------------------------------------
 
 		Order: services.NewOrderService(
 			orderRepo,
 			cropRepo,
 		),
 
-		// ====================================================
-		// CART SERVICE
-		//
-		// Handles buyer cart operations.
-		// ====================================================
+		// ----------------------------------------------------
+		// CART
+		// ----------------------------------------------------
 
 		Cart: cartService,
 
-		// ====================================================
-		// AI SERVICE
-		//
-		// Handles AI diagnosis operations.
-		// ====================================================
+		// ----------------------------------------------------
+		// AI
+		// ----------------------------------------------------
 
 		AI: services.NewAIService(
 			diagnosisRepo,
 			aiProvider,
 		),
 
-		// ====================================================
-		// NEGOTIATION SERVICE
-		//
-		// Handles the negotiation conversation and individual
-		// offers.
-		// ====================================================
+		// ----------------------------------------------------
+		// NEGOTIATION
+		// ----------------------------------------------------
 
 		Negotiation: negotiationService,
 
-		// ====================================================
-		// NOTIFICATION SERVICE
-		//
-		// Handles creating and managing notifications.
-		// ====================================================
+		// ----------------------------------------------------
+		// NOTIFICATION
+		// ----------------------------------------------------
 
 		Notification: notificationService,
 
-		// ====================================================
+		// ----------------------------------------------------
+		// CHAT
+		// ----------------------------------------------------
+
+		Chat: chatService,
+
+		// ----------------------------------------------------
 		// FARMER REPOSITORY
-		//
-		// Exposed so authentication middleware can look up
-		// the logged-in user.
-		// ====================================================
+		// ----------------------------------------------------
 
 		FarmerRepo: farmerRepo,
 	}
