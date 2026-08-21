@@ -7,8 +7,14 @@ import "time"
 //
 // Responsibility:
 // - Represents a user belonging to a conversation.
+// - Also carries basic user information when members are loaded.
 //
-// This is the model that makes GROUP CHAT possible.
+// IMPORTANT:
+//
+// UserID comes from conversation_members.
+//
+// FullName and PhotoURL come from the farmers table when
+// ConversationMember is loaded with a JOIN.
 //
 // Example:
 //
@@ -16,12 +22,11 @@ import "time"
 //
 //     conversation_id = 5
 //
-//     user_id = 1
-//     user_id = 7
-//     user_id = 12
-//     user_id = 25
+//     user_id = 1  → James Adah
+//     user_id = 7  → John Oche
+//     user_id = 12 → Peter Ameh
 //
-// Every row represents ONE member.
+// Every row still represents ONE member.
 // ============================================================
 
 type ConversationMember struct {
@@ -30,6 +35,11 @@ type ConversationMember struct {
 	ConversationID int `json:"conversation_id"`
 
 	UserID int `json:"user_id"`
+
+	// User information loaded from the farmers table.
+	FullName string `json:"full_name"`
+
+	PhotoURL string `json:"photo_url"`
 
 	JoinedAt time.Time `json:"joined_at"`
 }
